@@ -1,7 +1,5 @@
-/*
-Package message contains types and handlers for Buttplug messages.
-*/
-package message
+// Package buttplugmsg contains types and handlers for Buttplug messages.
+package buttplugmsg
 
 const (
 	// LogLevelOff ...
@@ -82,7 +80,7 @@ type OutgoingMessage struct {
 	StopAllDevices *Empty  `json:"StopAllDevices,omitempty"`
 
 	RawCmd                  *RawCmd                  `json:"RawCmd,omitempty"`
-	SingleMotorVibrateCmd   *SingleMotorVibrateCmd   `json:"SingleMotorVibrateCmd,omitempty"`
+	VibrateCmd              *VibrateCmd              `json:"VibrateCmd,omitempty"`
 	KiirooCmd               *KiirooCmd               `json:"KiirooCmd,omitempty"`
 	FleshlightLaunchFW12Cmd *FleshlightLaunchFW12Cmd `json:"FleshlightLaunchFW12Cmd,omitempty"`
 	LovenseCmd              *LovenseCmd              `json:"LovenseCmd,omitempty"`
@@ -179,7 +177,15 @@ type Device struct {
 	// Index used to identify the device when sending Device Messages.
 	DeviceIndex uint32
 	// Type names of Device Messages that the device will accept.
-	DeviceMessages []string `json:"DeviceMessages,omitempty"`
+	DeviceMessages map[string]struct {
+		// Number of features the Device Message may address. This attribute is
+		// used to define the capabilities of generic device control messages. The
+		// meaning of "feature" is specific to the context of the message the
+		// attribute is attached to. For instance, the FeatureCount attribute of a
+		// VibrateCmd message will refer to the number of vibration motors that
+		// can be controlled on a device advertising the VibrateCmd message.
+		FeatureCount uint32 `json:"FeatureCount,omitempty"`
+	} `json:"DeviceMessages,omitempty"`
 }
 
 // RawCmd used to send a raw byte string to a device.
@@ -192,15 +198,19 @@ type RawCmd struct {
 	Command []byte
 }
 
-// SingleMotorVibrateCmd causes a toy that supports vibration to run at a
-// certain speed.
-type SingleMotorVibrateCmd struct {
+// Causes a device that supports vibration to run specific vibration motors at
+// a certain speeds. Devices with multiple vibrator features may take multiple
+// values.
+type VibrateCmd struct {
 	// Message ID.
 	ID uint32 `json:"Id"`
 	// Index used to identify the device.
 	DeviceIndex uint32
-	// Vibration speed, with a range of [0.0-1.0]
-	Speed float64
+	// Vibration speeds
+	Speeds []struct {
+		Index uint32  // Index of vibration motor
+		Speed float64 // Vibration speed with a range of [0.0-1.0]
+	}
 }
 
 // KiirooCmd causes a toy that supports Kiiroo style commands to run whatever
